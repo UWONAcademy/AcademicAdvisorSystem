@@ -65,6 +65,11 @@
     font-size:15px; font-family:'Inter',sans-serif; background:#FCFCFA; color:var(--ink);
   }
   .field input:focus{outline:none; border-color:var(--teal);}
+  #otherSubText{
+    width:100%; padding:11px 13px; border-radius:10px; border:1.5px solid var(--line);
+    font-size:14.5px; font-family:'Inter',sans-serif; background:#FCFCFA; color:var(--ink);
+  }
+  #otherSubText:focus{outline:none; border-color:var(--teal);}
   .btn{
     display:inline-flex; align-items:center; justify-content:center; gap:8px;
     background:var(--teal); color:#fff; border:none; border-radius:11px;
@@ -371,6 +376,9 @@
           <div class="pill" data-sub="词汇">词汇</div>
           <div class="pill" data-sub="其他">其他</div>
         </div>
+        <div id="otherSubWrap" style="display:none; margin-top:12px;">
+          <input type="text" id="otherSubText" placeholder="请填写具体内容" oninput="saveClassDraft()">
+        </div>
       </div>
     </div>
 
@@ -501,6 +509,7 @@ function saveClassDraft(){
     classStudent: document.getElementById('classStudent').value,
     course: selectedCourse,
     sub: selectedSubs,
+    otherSubText: document.getElementById('otherSubText').value,
     contentText: document.getElementById('classContentText').value,
     vocabText: document.getElementById('classVocabText').value,
     homeworkText: document.getElementById('classHomeworkText').value,
@@ -592,6 +601,8 @@ function resetClassForm(){
   document.querySelectorAll('#coursePills .pill').forEach(p=>p.classList.remove('selected'));
   document.querySelectorAll('#subCoursePills .pill').forEach(p=>p.classList.remove('selected'));
   document.getElementById('subCourseWrap').style.display='none';
+  document.getElementById('otherSubText').value='';
+  document.getElementById('otherSubWrap').style.display='none';
   document.getElementById('classTime').value='';
   document.getElementById('classStudent').value='';
   document.getElementById('classContentText').value='';
@@ -625,6 +636,8 @@ function startClassRecord(){
     document.querySelectorAll('#subCoursePills .pill').forEach(p=>{
       p.classList.toggle('selected', selectedSubs.includes(p.dataset.sub));
     });
+    document.getElementById('otherSubText').value = draft.otherSubText || '';
+    document.getElementById('otherSubWrap').style.display = selectedSubs.includes('其他') ? 'block' : 'none';
     document.getElementById('classError').textContent='';
   } else {
     resetClassForm();
@@ -643,6 +656,8 @@ document.getElementById('coursePills').addEventListener('click', e=>{
   if(!needsSub){
     selectedSubs = [];
     document.querySelectorAll('#subCoursePills .pill').forEach(p=>p.classList.remove('selected'));
+    document.getElementById('otherSubText').value = '';
+    document.getElementById('otherSubWrap').style.display = 'none';
   }
   saveClassDraft();
 });
@@ -657,6 +672,13 @@ document.getElementById('subCoursePills').addEventListener('click', e=>{
   } else {
     selectedSubs.push(sub);
     pill.classList.add('selected');
+  }
+  const otherWrap = document.getElementById('otherSubWrap');
+  if(selectedSubs.includes('其他')){
+    otherWrap.style.display = 'block';
+  } else {
+    otherWrap.style.display = 'none';
+    document.getElementById('otherSubText').value = '';
   }
   saveClassDraft();
 });
@@ -706,12 +728,15 @@ function finishClassRecord(){
   if(!selectedCourse){ err.textContent = '请先选择课程类型'; return; }
   const needsSub = ['雅思','托福','语言能力'].includes(selectedCourse);
   if(needsSub && selectedSubs.length === 0){ err.textContent = '请选择进一步分类'; return; }
+  const otherSubText = document.getElementById('otherSubText').value.trim();
+  if(selectedSubs.includes('其他') && !otherSubText){ err.textContent = '请填写"其他"的具体内容'; return; }
   err.textContent = '';
 
   const timeLabel = formatDateOnly(classTime);
   const now = new Date();
   const genDateStr = now.toLocaleString('zh-CN', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-  const courseLabel = selectedCourse + (selectedSubs.length ? ' · ' + selectedSubs.join('、') : '');
+  const subLabels = selectedSubs.map(s => s === '其他' ? `其他（${otherSubText}）` : s);
+  const courseLabel = selectedCourse + (subLabels.length ? ' · ' + subLabels.join('、') : '');
 
   const body = document.getElementById('reportBody');
   body.innerHTML = `
